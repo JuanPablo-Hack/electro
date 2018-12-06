@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+      <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-8175315-21"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-8175315-21');
+</script>
+
+  <meta charset="utf-8">
+  <title>RC Circuito</title>
+</head>
+
+<body style="font-family:sans-serif; font-size:15px; margin-left:10; margin-right:10;">
+<center>
+	<div id="canvasesdiv" style="position:relative; display:block; margin:auto; width:850px; height:450px"></div>
+    <canvas id="myCanvas" style="display: block; position: absolute; margin: 0 auto;display: block;
+        position: absolute; margin: 0 auto; top: 0; bottom: 0; left: 0; right: 0;" width="850" height="450"></canvas>
+    <div id="buttons">
+      <input type="button" id="play" value="Play" onclick="play()">
+      <input type="button" id="pause" value="Pause" onclick="pause()">
+      <input type="button" id="stepforward" value="Step >>" onclick="stepForward()">
+      <input type="button" id="reset" value="Reset" onclick="reset()">
+    </div>
+    <div id="moreButtons">Grafico:
+      <input type="button" id="graph1" value="Voltage vs. time" onclick="voltageGraph()">
+      <input type="button" id="graph2" value="Current vs. time" onclick="currentGraph()">
+   </div>
+    <div id="moreButtons">:Posición del Switch:
+      <input type="button" id="s1" value="Battery in the circuit" onclick="switchPos = 1; if (runFlag == 0) { stepForward();}">
+      <input type="button" id="s2" value="Battery removed" onclick="switchPos = 2; if (runFlag == 0) { stepForward();}">
+   </div>
+    <div id="moreButtons">Visualizar:
+      <input type="button" id="v1" value="Actual charge flow" onclick="visualize = 1; if (runFlag == 0) { stepForward();}">
+      <input type="button" id="v2" value="Conventional current" onclick="visualize = 2; if (runFlag == 0) { stepForward();}">
+   </div>
+
+</center>
+
+  <script>
+
+
+      function play() {
+        window.clearTimeout(timer);
+        runFlag = 1;
+        runMotion();
+
+      }
+
+      function pause() {
+        window.clearTimeout(timer);
+        runFlag = 0;
+
+      }
+
+      function stepForward() {
+        window.clearTimeout(timer);
+        runFlag = 1;
+        drawMotion();
+
+      }
+
+      function stepBack() {
+        window.clearTimeout(timer);
+        index = index-2;
+        if (index >= 0) {
+          xPos = position[index].x;
+          yPos = position[index].y;
+          vy = vy - 2*fY*deltat;
+          runFlag = 1;
+          drawMotion();
+        }
+        if (index < -1) reset();
+
+      }
+
+
+      function reset() {
+        window.clearTimeout(timer);
+        index = -1;
+        time = 0.0;
+        xPos = xBase;
+        yPos = yBase + 150;
+        vx = 100.0;
+        vy = 0.0;
+        VC = 0;
+        Q = 0;
+        VR = Vmax;
+        I = VR/R;
+        switchPos = 1;
+        offset = 0.0;
+        xMajorTicks = 1;
+
+        RsliderValue = RsliderValueMin + (RsliderValueMax-RsliderValueMin)*(RsliderX-RsliderXMin)/(RsliderXMax-RsliderXMin);
+        R = RsliderValue;
+        CsliderValue = CsliderValueMin + (CsliderValueMax-CsliderValueMin)*(CsliderX-CsliderXMin)/(CsliderXMax-CsliderXMin);
+        C = CsliderValue;
+        runFlag = 1;
+        runMotion();
+      }
+
+      function voltageGraph() {
+        graphType = 1;
+        graphLabel = 'Voltaje vs. tiempo';
+        xAxisLabel = 't (s)';
+        xAxisOffset = 0.0;
+        xMajorTicks = 1;
+        xDecimals = 0;
+        yAxisLabel = 'Voltaje (V)';
+        yMajorTicks = 2.0;
+        plotColor = 'red';
+        runFlag = 1;
+ //       reset();
+      }
+
+      function currentGraph() {
+        graphType = 2;
+        graphLabel = 'Corriente vs. tiempo';
+        xAxisLabel = 't (s)';
+        xAxisOffset = 0.0;
+        xMajorTicks = 1;
+        xDecimals = 0;
+        yAxisLabel = 'Corriente (A)';
+        yMajorTicks = 2.0;
+        plotColor = 'red';
+        runFlag = 1;
+ //       reset();
+      }
+
+
+      var canvas = document.getElementById("myCanvas");
+      var context = canvas.getContext("2d");
+      canvas.onmousedown = myDown;							// mouse event handler for computer browsers
+	  canvas.onmouseup = myUp;								// mouse event handler for computer browsers
+	  canvas.addEventListener("touchstart", myTouchStart, false);	// touch handler for iPhones, iPads, and Androids
+	  canvas.addEventListener("touchmove", myTouchMove, false);	// touch handler for iPhones, iPads, and Androids
+	  canvas.addEventListener("touchend", myTouchEnd, false);		// touch handler for iPhones, iPads, and Androids
+      var myCheck = document.getElementById("myCheck");
+      var index = -1;
+      var xBase = 50;
+      var yBase = 100;
+      var xSupport = canvas.width/2;
+      var ySupport = yBase;
+      var xInit = 37;
+      var radius = 5;
+      var time = 0.0;
+      var  deltat = 1/100.0;
+
+      var xBase2 = xBase + 300;
+      var graphType = 1;
+      var graphLabel = 'Voltaje vs. tiempo';
+      var xAxisLabel = 't (s)';
+      var xAxisOffset = 0.0;
+      var xMajorTicks = 1;
+      var xDecimals = 0;
+      var yAxisLabel = 'Voltaje (V)';
+      var yMajorTicks = 2.0;
+      var plotColor = 'red';
+      var graphX = 10;
+      var graphY = 6;
+      var yDecimals = 0;
+
+      var R = 2.0;
+      var C = 1.0;
+      var Vmax = 6.0;
+      var VC = 0;
+      var Q = 0;
+      var VR = Vmax;
+      var I = VR/R;
+      var switchPos = 1;
+      var chargeColor = "blue";
+      var offset = 0;
+      var visualize = 1;
+
+      var xPos = xBase;
+      var yPos = yBase + 150;
+      var vx = 100.0;
+      var vy = 0.0;
+      var timer;
+      var runFlag = 1;
+
+      var RsliderX = 90;
+      var RsliderY = 400;
+      var RsliderXMin = 40;
+      var RsliderXMax = 240;
+      var RsliderValueMin = 1.0;
+      var RsliderValueMax = 5.0;
+      var RsliderValue = R;
+      var RsliderDecimals = 2;
+
+      var CsliderX = 360;
+      var CsliderY = 400;
+      var CsliderXMin = 360;
+      var CsliderXMax = 560;
+      var CsliderValueMin = 1.0;
+      var CsliderValueMax = 3.0;
+      var CsliderValue = C;
+      var CsliderDecimals = 2;
+
+      var arraySize = 10001;
+      var values = new Array(arraySize);
+        for (var i = 0; i < arraySize; i++) {
+         values[i] = {};
+         values[i].VR = VR;
+         values[i].VC = VC;
+         values[i].I = I
+        }
+
+
+      runMotion();
+
+    function drawMotion() {
+
+  //    console.log("In the drawMotion function, with runFlag = " + runFlag );
+
+      if ((time >= 80.0)) runFlag = 0;
+
+      if (time > 10.0) { xMajorTicks = 2.0; }
+      if (time > 20.0) { xMajorTicks = 4.0; }
+      if (time > 40.0) { xMajorTicks = 8.0; }
+
+  //    console.log("In the drawMotion function, with runFlag = " + runFlag + " xPos = " + xPos + " time = " + time + " yPos = " + yPos);
+
+      if (runFlag == 1) {    //      run if runFlag equal 1, not if equal 0
+        // clear
+        context.clearRect(0, 0, canvas.width, canvas.height);
+
+        // set background color for the entire thing
+           context.fillStyle = "#ffd";
+           context.fillRect(0, 0, canvas.width, canvas.height);
+
+       // draw resistance slider
+
+           drawSlider(RsliderX, RsliderY, RsliderXMin, RsliderXMax, RsliderValueMin, RsliderValueMax, RsliderValue, RsliderDecimals);
+           var sLabel = 'Resistencia = ';
+           sLabel = sLabel + RsliderValue.toFixed(RsliderDecimals) + ' ohms';
+           context.font = '16pt Calibri';
+           context.textAlign = 'center';
+           context.textBaseline = 'middle';
+           context.fillStyle = 'black';
+           context.fillText(sLabel,RsliderXMin+0.5*(RsliderXMax-RsliderXMin), RsliderY-25);
+
+
+       // draw capacitance slider
+
+           drawSlider(CsliderX, CsliderY, CsliderXMin, CsliderXMax, CsliderValueMin, CsliderValueMax, CsliderValue, CsliderDecimals);
+           sLabel = 'Capacitancia = ';
+           sLabel = sLabel + CsliderValue.toFixed(CsliderDecimals) + ' F';
+           context.font = '16pt Calibri';
+           context.textAlign = 'center';
+           context.textBaseline = 'middle';
+           context.fillStyle = 'black';
+           context.fillText(sLabel,CsliderXMin+0.5*(CsliderXMax-CsliderXMin), CsliderY-25);
+
+           index = index + 1;
+           time = index/100.0;
+   //        console.log(index + "  time = " + time + " x = " + xPos + " y = " + yPos);
+
+   // update values
+           if (switchPos == 1) {
+             I = VR/R;
+             Q = Q + I*deltat;
+             VC = Q/C;
+             VR = Vmax - VC;
+             I = VR/R;
+             values[index].VC = VC;
+             values[index].VR = VR;
+             values[index].I = I;
+             offset = offset + I/4.0;
+             if (offset > 24.0) offset = offset - 24.0;
+           }
+            if (switchPos == 2) {
+             VR = -VC;
+             I = VR/R;
+             Q = Q + I*deltat;
+             VC = Q/C;
+             VR = -VC;
+             I = VR/R;
+             values[index].VC = VC;
+             values[index].VR = VR;
+             values[index].I = I;
+             offset = offset + I/4.0;
+             if (offset < 0.0) offset = offset + 24.0;
+           }
+
+  //         console.log(time);
+           if (graphType == 1) {    // voltage vs. time
+       // draw axes for the graph
+             drawAxesMidY (xBase2, yBase, graphX, graphY, xAxisOffset, xMajorTicks, yMajorTicks, xDecimals, yDecimals, xAxisLabel, yAxisLabel, graphLabel);
+             context.strokeStyle = plotColor;  // voltage across the resistor
+             context.beginPath();
+             context.moveTo(xBase2, yBase+40*graphY/2-(40/yMajorTicks)*values[0].VR);
+             for (var ival = 1; ival <=index; ival++) {
+               context.lineTo(xBase2+(40/xMajorTicks)*ival/100.0, yBase+40*graphY/2-(40/yMajorTicks)*values[ival].VR);
+             }
+             context.stroke();
+
+             context.strokeStyle = "blue";      // voltage across the capacitor
+             context.beginPath();
+             context.moveTo(xBase2, yBase+40*graphY/2-(40/yMajorTicks)*values[0].VC);
+             for (var ival = 1; ival <=index; ival++) {
+               context.lineTo(xBase2+(40/xMajorTicks)*ival/100.0, yBase+40*graphY/2-(40/yMajorTicks)*values[ival].VC);
+             }
+             context.stroke();
+
+           }
+
+            if (graphType == 2) {    // current vs. time
+       // draw axes for the graph
+             drawAxesMidY (xBase+300, yBase, graphX, graphY, xAxisOffset, xMajorTicks, yMajorTicks, xDecimals, yDecimals, xAxisLabel, yAxisLabel, graphLabel);
+             context.strokeStyle = plotColor;
+             context.beginPath();
+             context.moveTo(xBase2, yBase+40*graphY/2-(40/yMajorTicks)*values[0].I);
+             for (var ival = 1; ival <=index; ival++) {
+               context.lineTo(xBase2+(40/xMajorTicks)*ival/100.0, yBase+40*graphY/2-(40/yMajorTicks)*values[ival].I);
+             }
+             context.stroke();
+           }
+
+        //  draw the circuit
+
+        // set line color
+           context.strokeStyle = '#999';
+           context.lineWidth = 3;
+
+           // top left
+           context.beginPath();
+           context.moveTo(xBase-40, yBase+72);
+           context.lineTo(xBase+40, yBase+72);
+           context.stroke();
+
+           // top to resistor
+           context.beginPath();
+           context.moveTo(xBase, yBase+72);
+           context.lineTo(xBase, yBase);
+           context.lineTo(xBase+120, yBase);
+           context.stroke();
+           context.beginPath();
+           context.moveTo(xBase+168, yBase);
+           context.lineTo(xBase+216, yBase);
+           context.lineTo(xBase+216, yBase+76);
+           context.stroke();
+
+           // capacitor
+           context.beginPath();
+           context.moveTo(xBase+120, yBase-30);
+           context.lineTo(xBase+120, yBase+30);
+           context.stroke();
+           context.beginPath();
+           context.moveTo(xBase+168, yBase-30);
+           context.lineTo(xBase+168, yBase+30);
+           context.stroke();
+
+           // bottom
+           context.beginPath();
+           context.moveTo(xBase+216, yBase+240-76);
+           context.lineTo(xBase+216, yBase+240);
+           context.lineTo(xBase+72, yBase+240);
+           context.stroke();
+           context.beginPath();
+           context.moveTo(xBase+24, yBase+240);
+           context.lineTo(xBase, yBase+240);
+           context.lineTo(xBase, yBase+240-72);
+           context.stroke();
+
+           context.beginPath();
+           context.moveTo(xBase-20, yBase+240-72);
+           context.lineTo(xBase+20, yBase+240-72);
+           context.stroke();
+
+           // draw the resistor
+           context.beginPath();
+           context.moveTo(xBase+216, yBase+76);
+           context.lineTo(xBase+216-8, yBase+72+8);
+
+           for (i=1; i<=9; i=i+2) {
+            context.lineTo(xBase+216+8, yBase+72+8+8*i);
+            context.lineTo(xBase+216-8, yBase+72+8+8*(i+1));
+           }
+           context.lineTo(xBase+216, yBase+240-76);
+           context.stroke();
+
+           //  draw path 2
+           context.beginPath();
+           context.moveTo(xBase+72, yBase);
+           context.lineTo(xBase+72, yBase+192);
+           context.stroke();
+
+           //  draw the switch
+ //          console.log(switchPos);
+           if (switchPos == 1) drawArrow(-48/5,0,xBase+72,yBase+240,'#999');
+           if (switchPos == 2) drawArrow(0,48/5,xBase+72,yBase+240,'#999');
+
+
+// draw the moving charges (actual charge flow)
+         if (visualize == 1) {
+            chargeColor = "blue";
+            var istart = 0;
+            if (switchPos == 2) istart = 3;
+            for (i=istart; i<=8; i++) {     // top
+               context.beginPath();
+               if ((i < 5) || (i > 6)) context.arc(xBase+24+24*i-offset, yBase, radius, 0, 2 * Math.PI, false);
+               context.fillStyle = chargeColor;
+               context.fill();
+             }
+             for (i=0; i<=(8-istart); i++) {     // bottom
+               context.beginPath();
+               context.arc(xBase+216-24-24*i+offset, yBase+240, radius, 0, 2 * Math.PI, false);
+               context.fillStyle = chargeColor;
+               context.fill();
+             }
+             for (i=0; i<=9; i++) {      // right side
+               context.beginPath();
+               context.arc(xBase+216,yBase+24+24*i-offset, radius, 0, 2 * Math.PI, false);
+               context.fillStyle = chargeColor;
+               context.fill();
+             }
+
+        if (switchPos == 1) {
+             for (i=0; i<=2; i++) {      // left side electrons
+               context.beginPath();
+               context.arc(xBase,yBase+240-24-24*i+offset, radius, 0, 2 * Math.PI, false);
+               context.arc(xBase,yBase+240-24-24*(i+7)+offset, radius, 0, 2 * Math.PI, false);
+               context.fillStyle = chargeColor;
+               context.fill();
+             }
+             for (i=3; i<=6; i++) {      // left side in the battery
+               context.beginPath();
+               context.arc(xBase,yBase+240+0-24*i-offset, radius, 0, 2 * Math.PI, false);
+               context.fillStyle = 'red';
+               context.fill();
+             }
+        }
+
+
+        if (switchPos == 2) {
+             for (i=0; i<=9; i++) {      // left side electrons
+               context.beginPath();
+               context.arc(xBase+72,yBase+0+24*i+offset, radius, 0, 2 * Math.PI, false);
+               context.fillStyle = chargeColor;
+               context.fill();
+             }
+          }
+        }
+
+// draw the moving charges (conventional current)
+         if (visualize == 2) {
+            chargeColor = "red";
+            var istart = 0;
+            if (switchPos == 2) istart = 3;
+            for (i=istart; i<=8; i++) {     // top
+               context.beginPath();
+               if ((i < 5) || (i > 6)) context.arc(xBase+0+24*i+offset, yBase, radius, 0, 2 * Math.PI, false);
+               context.fillStyle = chargeColor;
+               context.fill();
+             }
+             for (i=0; i<=(8-istart); i++) {     // bottom
+               context.beginPath();
+               context.arc(xBase+216-0-24*i-offset, yBase+240, radius, 0, 2 * Math.PI, false);
+               context.fillStyle = chargeColor;
+               context.fill();
+             }
+             for (i=0; i<=9; i++) {      // right side
+               context.beginPath();
+               context.arc(xBase+216,yBase+0+24*i+offset, radius, 0, 2 * Math.PI, false);
+               context.fillStyle = chargeColor;
+               context.fill();
+             }
+
+        if (switchPos == 1) {
+             for (i=0; i<=9; i++) {      // left side
+               context.beginPath();
+               context.arc(xBase,yBase+240-0-24*i-offset, radius, 0, 2 * Math.PI, false);
+               context.fillStyle = chargeColor;
+               context.fill();
+             }
+        }
+
+
+        if (switchPos == 2) {
+             for (i=0; i<=9; i++) {      // left side
+               context.beginPath();
+               context.arc(xBase+72,yBase+24+24*i-offset, radius, 0, 2 * Math.PI, false);
+               context.fillStyle = chargeColor;
+               context.fill();
+             }
+          }
+        }
+
+           // re-draw the capacitor, with plates colored to match voltage
+           var redness = Math.floor(64+31*VC);
+           var redString = redness.toString(16);
+           var greenness = Math.floor(64);
+           var greenString = greenness.toString(16);
+           if (greenString.length == 1) greenString = "0"+greenString;
+           var blueness = Math.floor(64);
+           var blueString = blueness.toString(16);
+           if (blueString.length == 1) blueString = "0"+blueString;
+
+           var colorString = "#" + redString+greenString+blueString;
+//           console.log(redString+greenString+blueString);
+
+           context.strokeStyle = colorString;
+           context.lineWidth = 10;
+           context.beginPath();
+           context.moveTo(xBase+120, yBase-30);
+           context.lineTo(xBase+120, yBase+30);
+           context.stroke();
+           colorString = "#" + blueString+greenString+redString;
+
+           context.strokeStyle = colorString;
+           context.beginPath();
+           context.moveTo(xBase+168, yBase-30);
+           context.lineTo(xBase+168, yBase+30);
+           context.stroke();
+
+
+      }
+    }
+
+    function runMotion() {
+        drawMotion();
+        if (runFlag == 1) {
+          timer = window.setTimeout(runMotion, 300/30);
+        }
+      }
+
+    function drawArrow(Fx,Fy,Px,Py, arrowColor) {
+           var theta = Math.atan2(Fy,Fx);
+           context.strokeStyle = arrowColor;
+           context.lineWidth = 4;
+           context.beginPath();
+           context.moveTo(Px, Py);
+           context.lineTo(Px+5*Fx, Py-5*Fy);
+           context.stroke();
+
+           context.lineWidth = 2;
+
+           var Fmag = Math.sqrt(Fx*Fx+Fy*Fy);
+           if (Fmag > 5) Fmag = 5;
+
+           context.fillStyle = arrowColor;
+           context.beginPath();
+           context.moveTo(Px+5*Fx-3*Fmag*Math.cos(theta+0.25*(3.1416/2)),Py-5*Fy+3*Fmag*Math.sin(theta+0.25*(3.1416/2)));
+           context.lineTo(Px+5*Fx,Py-5*Fy);
+           context.lineTo(Px+5*Fx-3*Fmag*Math.cos(theta-0.25*(3.1416/2)),Py-5*Fy+3*Fmag*Math.sin(theta-0.25*(3.1416/2)));
+
+           context.stroke();
+           context.fill();
+
+    }
+
+    function drawAxes(xAxisStart,yAxisStart,xNum, yNum, xOffset, xIncrement, yIncrement, xNumDecimals, yNumDecimals, xAxisTitle, yAxisTitle, graphTitle) {
+        // set background color for the graph
+           context.fillStyle = "#eff";
+           context.fillRect(xAxisStart, yAxisStart, 40*xNum, 40*yNum);
+
+           var axisLabel = '';
+           var axisValue = 0;
+
+         // vertical grid lines
+         context.lineWidth = 2;
+         context.strokeStyle = '#888';
+
+         for (var i = 0; i <= xNum; i++) {
+           context.beginPath();
+           context.moveTo(xAxisStart+40*i, yAxisStart);
+           context.lineTo(xAxisStart+40*i, yAxisStart+40*yNum+10);
+           context.stroke();
+           context.font = '14pt Calibri';
+           context.fillStyle = 'black';
+           context.textAlign = 'center';
+           context.textBaseline = 'middle';
+           axisValue = xOffset+xIncrement*(i);
+           axisLabel = axisValue.toFixed(xNumDecimals);
+           context.fillText(axisLabel, xAxisStart+40*i, yAxisStart+40*yNum+20);
+          }
+
+         // horizontal grid lines
+         for (i = 0; i <= yNum; i++) {
+           context.beginPath();
+           context.moveTo(xAxisStart-10, yAxisStart+40*i);
+           context.lineTo(xAxisStart+40*xNum, yAxisStart+40*i);
+           context.stroke();
+           context.font = '14pt Calibri';
+           context.fillStyle = 'black';
+           context.textAlign = 'center';
+           context.textBaseline = 'middle';
+           axisValue = yIncrement*(yNum-i);
+           axisLabel = axisValue.toFixed(yNumDecimals);
+           context.fillText(axisLabel, xAxisStart-30, yAxisStart+40*i);
+
+          }
+
+         // x-axis
+           context.strokeStyle = '#000';
+           context.lineWidth = 4;
+           context.beginPath();
+           context.moveTo(xAxisStart-1, yAxisStart+40*yNum);
+           context.lineTo(xAxisStart+40*xNum+20, yAxisStart+40*yNum);
+           context.stroke();
+           context.moveTo(xAxisStart+40*xNum+10, yAxisStart+40*yNum-6);
+           context.lineTo(xAxisStart+40*xNum+20, yAxisStart+40*yNum);
+           context.lineTo(xAxisStart+40*xNum+10, yAxisStart+40*yNum+6);
+           context.lineJoin = 'miter';
+           context.stroke();
+           context.font = '16pt Calibri';
+           context.fillStyle = 'black';
+           context.textAlign = 'left';
+           context.fillText(xAxisTitle, xAxisStart+40*xNum+24, yAxisStart+40*yNum);
+
+         // y-axis
+           context.strokeStyle = '#000';
+           context.beginPath();
+           context.moveTo(xAxisStart, yAxisStart-20);
+           context.lineTo(xAxisStart, yAxisStart+40*yNum);
+           context.stroke();
+           context.moveTo(xAxisStart-6, yAxisStart-10);
+           context.lineTo(xAxisStart, yAxisStart-20);
+           context.lineTo(xAxisStart+6, yAxisStart-10);
+           context.lineJoin = 'miter';
+           context.stroke();
+           context.strokeStyle = '#000';
+           context.textAlign = 'center';
+  //         console.log("In the drawMotion function, with yAxisTitle = " + yAxisTitle + xAxisStart );
+
+           context.font = '16pt Calibri';
+           context.fillStyle = 'black';
+           context.fillText(yAxisTitle, xAxisStart-30, yAxisStart - 35);
+
+           // graph title
+           context.font = 'bold 18pt Calibri';
+           context.fillStyle = 'purple';
+           context.textAlign = 'center';
+           context.fillText(graphTitle, xAxisStart+40*xNum/2, yAxisStart-24);
+
+    }
+
+    function drawAxesMidY(xAxisStart,yAxisStart,xNum, yNum, xOffset, xIncrement, yIncrement, xNumDecimals, yNumDecimals, xAxisTitle, yAxisTitle, graphTitle) {
+        // set background color for the graph
+           context.fillStyle = "#eff";
+           context.fillRect(xAxisStart, yAxisStart, 40*xNum, 40*yNum);
+
+           var axisLabel = '';
+           var axisValue = 0;
+
+         // vertical grid lines
+         context.lineWidth = 2;
+         context.strokeStyle = '#888';
+
+         for (var i = 0; i <= xNum; i++) {
+           context.beginPath();
+           context.moveTo(xAxisStart+40*i, yAxisStart);
+           context.lineTo(xAxisStart+40*i, yAxisStart+40*yNum/2+10);
+           context.stroke();
+           context.moveTo(xAxisStart+40*i, yAxisStart+40*yNum/2+30);
+           context.lineTo(xAxisStart+40*i, yAxisStart+40*yNum);
+           context.stroke();
+           context.font = '14pt Calibri';
+           context.fillStyle = 'black';
+           context.textAlign = 'center';
+           context.textBaseline = 'middle';
+           axisValue = xOffset + xIncrement*(i);
+           axisLabel = axisValue.toFixed(xNumDecimals);
+           if (i > 0) context.fillText(axisLabel, xAxisStart+40*i, yAxisStart+40*yNum/2+20);
+          }
+
+         // horizontal grid lines
+         for (i = 0; i <= yNum; i++) {
+           context.beginPath();
+           context.moveTo(xAxisStart-10, yAxisStart+40*i);
+           context.lineTo(xAxisStart+40*xNum, yAxisStart+40*i);
+           context.stroke();
+           context.font = '14pt Calibri';
+           context.fillStyle = 'black';
+           context.textAlign = 'center';
+           context.textBaseline = 'middle';
+           axisValue = yIncrement*(yNum/2-i);
+           axisLabel = axisValue.toFixed(yNumDecimals);
+           context.fillText(axisLabel, xAxisStart-30, yAxisStart+40*i);
+
+          }
+
+         // x-axis
+           context.strokeStyle = '#000';
+           context.lineWidth = 4;
+           context.beginPath();
+           context.moveTo(xAxisStart-1, yAxisStart+40*yNum/2);
+           context.lineTo(xAxisStart+40*xNum+20, yAxisStart+40*yNum/2);
+           context.stroke();
+           context.moveTo(xAxisStart+40*xNum+10, yAxisStart+40*yNum/2-6);
+           context.lineTo(xAxisStart+40*xNum+20, yAxisStart+40*yNum/2);
+           context.lineTo(xAxisStart+40*xNum+10, yAxisStart+40*yNum/2+6);
+           context.lineJoin = 'miter';
+           context.stroke();
+           context.font = '16pt Calibri';
+           context.fillStyle = 'black';
+           context.textAlign = 'left';
+           context.fillText(xAxisTitle, xAxisStart+40*xNum+24, yAxisStart+40*yNum/2);
+
+         // y-axis
+           context.strokeStyle = '#000';
+           context.beginPath();
+           context.moveTo(xAxisStart, yAxisStart-20);
+           context.lineTo(xAxisStart, yAxisStart+40*yNum);
+           context.stroke();
+           context.moveTo(xAxisStart-6, yAxisStart-10);
+           context.lineTo(xAxisStart, yAxisStart-20);
+           context.lineTo(xAxisStart+6, yAxisStart-10);
+           context.lineJoin = 'miter';
+           context.stroke();
+           context.strokeStyle = '#000';
+           context.textAlign = 'center';
+  //         console.log("In the drawMotion function, with yAxisTitle = " + yAxisTitle + xAxisStart );
+
+           context.font = '16pt Calibri';
+           context.fillStyle = 'black';
+           context.fillText(yAxisTitle, xAxisStart-30, yAxisStart - 35);
+
+           // graph title
+           context.font = 'bold 18pt Calibri';
+           context.fillStyle = 'purple';
+           context.textAlign = 'center';
+           context.fillText(graphTitle, xAxisStart+40*xNum/2, yAxisStart-24);
+
+    }
+
+    function drawSlider(sliderX, sliderY, sliderXMin, sliderXMax, sliderValueMin, sliderValueMax, sliderValue, sliderDecimals) {
+
+
+       context.strokeStyle = '#999';
+       context.lineWidth = 8;
+       context.beginPath();
+       context.moveTo(sliderXMin,sliderY);
+       context.lineTo(sliderXMax,sliderY);
+       context.stroke();
+
+       context.strokeStyle = '#44f';
+       context.lineWidth = 8;
+       context.beginPath();
+       context.moveTo(sliderXMin,sliderY);
+       context.lineTo(sliderX,sliderY);
+       context.stroke();
+
+       context.beginPath();
+       context.arc(sliderX, sliderY, 10, 0, 2 * Math.PI, false);
+       context.fillStyle = '#00f';
+       context.fill();
+       context.lineWidth = 1;
+       context.strokeStyle = 'black';
+       context.stroke();
+
+      }
+
+//  Mouse and Touch event functions from  Wolfgang Bauer
+
+function whereClicked(x_,y_,what_) {    // underscore denotes local variables
+	//if (what_ == 'down') {console.log('('+x_+','+y_+')'+what_)};
+//	console.log('('+x_+','+y_+')'+what_);
+//    console.log("x offset = " + charge1X + " y offset = " + charge1Y);
+      if ((Math.abs(x_ - (RsliderX)) < 40) && (Math.abs(y_ - RsliderY) < 40))   // moving the g slider
+      {
+        RsliderX = x_ ;
+        if (RsliderX < RsliderXMin) RsliderX = RsliderXMin;
+        if (RsliderX > RsliderXMax) RsliderX = RsliderXMax;
+        reset();
+      }
+      else if ((Math.abs(x_ - (CsliderX)) < 40) && (Math.abs(y_ - CsliderY) < 40))   // moving the g slider
+      {
+        CsliderX = x_ ;
+        if (CsliderX < CsliderXMin) CsliderX = CsliderXMin;
+        if (CsliderX > CsliderXMax) CsliderX = CsliderXMax;
+        reset();
+      }
+//        reset();
+//      }
+//      else if ((Math.abs(x_ - (charge2X)) < 15) && (Math.abs(y_ - charge2Y) < 15))  // moving the right-hand charge
+//      {
+//        charge2X = x_ ;
+//        charge2Y = y_ ;
+//        reset();
+//      }
+
+	if (what_ == 'down') {
+//		dragRect = true;
+//		x1 = x_;     // x1, y1 are global variables
+//		y1 = y_;
+	}
+	if (what_ == 'move') {
+//		dragRect = true;
+//		dx = x_-x1;
+//		dy = y_-y1;
+	}
+	if (what_ == 'up') {
+//		dragRect = false;
+//		dx = x_-x1;
+//		dy = y_-y1;
+	}
+}
+
+function myMove(event){
+	var xClick = event.pageX - canvasesdiv.offsetLeft;
+	var yClick = event.pageY - canvasesdiv.offsetTop;
+	whereClicked(xClick,yClick,'move');
+//	drawAll();
+//	drawMotion();
+
+}
+
+function myDown(event){
+	var xClick = event.pageX - canvasesdiv.offsetLeft;
+	var yClick = event.pageY - canvasesdiv.offsetTop;
+	whereClicked(xClick,yClick,'down');
+	canvas.onmousemove = myMove;
+//	drawMotion();
+}
+
+function myUp(event){
+	var xClick = event.pageX - canvasesdiv.offsetLeft;
+	var yClick = event.pageY - canvasesdiv.offsetTop;
+	whereClicked(xClick,yClick,'up');
+	canvas.onmousemove = null;
+//	drawMotion();
+}
+
+function myTouchMove(event){
+	event.preventDefault();
+	var xClick = event.targetTouches[0].pageX - canvasesdiv.offsetLeft;
+	var yClick = event.targetTouches[0].pageY - canvasesdiv.offsetTop;
+	whereClicked(xClick,yClick,'move');
+//	drawMotion();
+}
+
+function myTouchStart(event){
+	event.preventDefault();
+	var xClick = event.targetTouches[0].pageX - canvasesdiv.offsetLeft;
+	var yClick = event.targetTouches[0].pageY - canvasesdiv.offsetTop;
+	whereClicked(xClick,yClick,'down');
+//	drawMotion();
+}
+
+function myTouchEnd(event){
+	event.preventDefault();
+	var xClick = event.targetTouches[0].pageX - canvasesdiv.offsetLeft;
+	var yClick = event.targetTouches[0].pageY - canvasesdiv.offsetTop;
+	whereClicked(xClick,yClick,'up');
+//	drawMotion();
+}
+
+
+  </script>
+<p>Esta es una simulación de un circuito en serie de resistencia-condensador, que involucra una resistencia, un condensador, una batería y un interruptor. Tenga en cuenta que en el gráfico de voltaje, la línea roja muestra el voltaje
+a través de la resistencia, y la línea azul muestra el voltaje a través del condensador. </p>
+
+<p> Los controles deslizantes le permiten ajustar los valores de la resistencia y la capacitancia. ¿Cuál es la corriente más grande que se puede lograr?
+¿Cuál es la corriente más pequeña? </p>
+
+<p> También tiene botones para mover el interruptor de una posición a la otra, ya sea incluyendo la batería en el circuito o retirando la
+Batería del circuito. Hay otro conjunto de botones para cambiar la vista desde el flujo de carga real (rojo = positivo, azul = negativo)
+a corriente convencional (todas las cargas que fluyen son positivas).</p>
+
+
+
+
+</body>
+</html>

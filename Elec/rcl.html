@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+            <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-8175315-24"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-8175315-24');
+</script>
+
+  <meta charset="utf-8">
+  <title>RLC circuito</title>
+	<script type="text/javascript">
+	  <!--
+//	  var circuitImage = new Image();
+//	  circuitImage.src = "RLC_circuit.jpg";
+	//-->
+	</script>
+
+</head>
+
+<body style="font-family:sans-serif; font-size:15px; width:680px; margin-left:auto; margin-right:auto;">
+<center>
+<H3>RLC circuito</H3>
+
+	<div id="canvasesdiv" style="position:relative; width:680px; height:470px">
+    <canvas id="myCanvas" style="position:absolute; left:0px; top:0px;" width="680" height="470"></canvas>
+    </div>
+         <div>Resistencia (en ohms)</div>
+     <div id="slider1">
+      50 ohms <input type="range" id="RValue" min="50" max="150" value="100" step="1" oninput="showR(this.value)" onchange="showR(this.value)"> 150 ohms
+<div id="initialRValue">100</div>
+    </div>
+         <div>Capacitancia (en microfarads)</div>
+     <div id="slider2">
+      3.0 microF <input type="range" id="CValue" min="3.0" max="8.0" value="5" step="0.1" oninput="showC(this.value)" onchange="showC(this.value)"> 8.0 microF
+<div id="initialCValue">5</div>
+    </div>
+         <div>Induntancia (en mH)</div>
+     <div id="slider3">
+      5 mH <input type="range" id="LValue" min="5" max="50" value="20" step="1.0" oninput="showL(this.value)" onchange="showL(this.value)"> 50 mH
+<div id="initialLValue">20</div>
+    </div>
+         <div>Frecuencia (in Hz)</div>
+     <div id="slider4">
+      300 Hz <input type="range" id="fValue" min="300" max="700" value="500" step="5" oninput="showf(this.value)" onchange="showf(this.value)"> 700 Hz
+<div id="initialfValue">500</div>
+    </div>
+
+
+</center>
+
+  <script>
+
+// Simulation first posted on 3-13-2016 - written by Andrew Duffy
+
+
+           function showR(newValue)
+      {
+             //get the element
+             var display = document.getElementById("initialRValue");
+             //show the amount
+             display.innerHTML=newValue;
+             R = Number(newValue);
+             drawMotion();
+     }
+
+           function showL(newValue)
+      {
+             //get the element
+             var display = document.getElementById("initialLValue");
+             //show the amount
+             display.innerHTML=newValue;
+             L = Number(newValue);
+             drawMotion();
+     }
+
+           function showC(newValue)
+      {
+             //get the element
+             var display = document.getElementById("initialCValue");
+             //show the amount
+             display.innerHTML=newValue;
+             C = Number(newValue);
+             drawMotion();
+     }
+
+           function showf(newValue)
+      {
+             //get the element
+             var display = document.getElementById("initialfValue");
+             //show the amount
+             display.innerHTML=newValue;
+             f = Number(newValue);
+             drawMotion();
+     }
+
+
+
+
+      var canvas = document.getElementById('myCanvas');
+      var context = canvas.getContext('2d');
+
+      var index = 0;
+      var xBase = 440;
+      var yBase = 140;
+      var radius = 6;
+      var runFlag = 1;
+      var time = 0.0;
+      var timer;
+      var R = 100;
+      var C = 5;
+      var L = 20;
+      var f = 500;
+      var XL;
+      var XC;
+      var Z;
+      var current;
+      var vectorColor = 'black';
+
+      var xBase2 = 425;   // for the current graph
+      var yBase2 = 270;    // for the current graph
+      var graphType = 1;
+      var graphTitle = 'Current vs. frequency';
+      var yAxisTitle = 'I (A)';
+      var xAxisTitle = 'f (Hz)';
+      var xAxisChoice = 1;
+      var yAxisChoice = 1;
+      var xIncrement = 100;
+      var xNumDecimals = 0;
+      var yIncrement = 1;
+      var yNumDecimals = 0;
+      var yStart = yBase2+160;
+      var graphY = 4;
+      var graphX = 4;
+      var plotColor = '#ff00ff';
+
+      var xBase3 = 65;   // for the voltage graph
+      var yBase3 = 270;    // for the voltage graph
+      var graph3Type = 1;
+      var graph3Title = 'Voltage vs. time';
+      var yAxis3Title = 'V (V)';
+      var xAxis3Title = 't (ms)';
+      var xAxis3Choice = 1;
+      var yAxis3Choice = 1;
+      var x3Increment = 0.5;
+      var x3NumDecimals = 1;
+      var y3Increment = 200;
+      var y3NumDecimals = 0;
+      var y3Start = yBase3+160;
+      var graph3Y = 4;
+      var graph3X = 6;
+      var plot3Color = '#ff00ff';
+
+	  var circuitImage = new Image();
+	  circuitImage.src = "RLC_circuit.jpg";
+      drawMotion();
+
+
+    function drawMotion() {
+
+  //    console.log("In the drawMotion function, with runFlag = " + runFlag );
+
+      runFlag = 1;
+
+  //    console.log("In the drawMotion function, with runFlag = " + runFlag + " yPos = " + yPos + " index = " +index);
+
+      if (runFlag == 1) {    //      run if runFlag equal 1, not if equal 0
+        // clear
+        context.clearRect(0, 0, canvas.width, canvas.height);
+
+        index = index + 1;
+
+        // clear
+        context.clearRect(0, 0, canvas.width, canvas.height);
+
+        // set background color for the entire thing
+           context.fillStyle = "#ffd";
+           context.fillRect(0, 0, canvas.width, canvas.height);
+
+        // set line color
+           context.strokeStyle = '#999';
+           context.lineWidth = 2;
+
+           XL = 2*Math.PI*f*L/1000;
+           XC = 1/(2*Math.PI*f*C/1000000);
+           Z = Math.sqrt((XL-XC)*(XL-XC)+R*R);
+           current = 170.0/Z;
+ //          console.log(XL + "   " + XC);
+
+
+           vectorColor = "red";
+           drawArrow(0.1*R,0,xBase,yBase,vectorColor)
+           vectorColor = "blue";
+           drawArrow(0,0.1*XL,xBase,yBase,vectorColor)
+           vectorColor = "green";
+           drawArrow(0,-0.1*XC,xBase,yBase,vectorColor)
+           vectorColor = "purple";
+           drawArrow(0.1*R,0.1*(XL-XC),xBase,yBase,vectorColor)
+
+
+        // set background color for the graph
+           context.fillStyle = "#eff";
+           context.fillRect(xBase2, yBase2, 40*graphX, 40*graphY);
+
+           var axisLabel = '';
+           var axisValue = 0;
+
+         // this section for the current graph
+
+         // vertical grid lines
+         for (var i = 0; i <= graphX; i++) {
+           context.beginPath();
+           context.moveTo(xBase2+40*i, yBase2);
+           context.lineTo(xBase2+40*i, yBase2+40*graphY+10);
+           context.stroke();
+           context.font = '14pt Calibri';
+           context.fillStyle = 'black';
+           context.textAlign = 'center';
+           context.textBaseline = 'middle';
+           axisValue = 300+xIncrement*(i);
+           axisLabel = axisValue.toFixed(xNumDecimals);
+           context.fillText(axisLabel, xBase2+40*i, yBase2+40*graphY+20);
+          }
+
+         // horizontal grid lines
+         for (i = 0; i <= graphY; i++) {
+           context.beginPath();
+           context.moveTo(xBase2-10, yBase2+40*i);
+           context.lineTo(xBase2+40*graphX, yBase2+40*i);
+           context.stroke();
+           context.font = '14pt Calibri';
+           context.fillStyle = 'black';
+           context.textAlign = 'center';
+           context.textBaseline = 'middle';
+           axisValue = yIncrement*(4-i);
+           axisLabel = axisValue.toFixed(yNumDecimals);
+           context.fillText(axisLabel, xBase2-30, yBase2+40*i);
+
+          }
+
+         // x-axis
+           context.strokeStyle = '#000';
+           context.lineWidth = 4;
+           context.beginPath();
+           context.moveTo(xBase2-1, yBase2+40*graphY);
+           context.lineTo(xBase2+40*graphX+20, yBase2+40*graphY);
+           context.stroke();
+           context.moveTo(xBase2+40*graphX+10, yBase2+40*graphY-6);
+           context.lineTo(xBase2+40*graphX+20, yBase2+40*graphY);
+           context.lineTo(xBase2+40*graphX+10, yBase2+40*graphY+6);
+           context.lineJoin = 'miter';
+           context.stroke();
+           context.font = '16pt Calibri';
+           context.fillStyle = 'black';
+           context.textAlign = 'left';
+           context.fillText(xAxisTitle, xBase2+40*graphX+24, yBase2+40*graphY);
+
+
+        // draw graph
+
+
+         // y-axis
+           context.strokeStyle = '#000';
+           context.beginPath();
+           context.moveTo(xBase2, yBase2-20);
+           context.lineTo(xBase2, yBase2+40*graphY);
+           context.stroke();
+           context.moveTo(xBase2-6, yBase2-10);
+           context.lineTo(xBase2, yBase2-20);
+           context.lineTo(xBase2+6, yBase2-10);
+           context.lineJoin = 'miter';
+           context.stroke();
+           context.strokeStyle = '#000';
+           context.textAlign = 'center';
+  //         console.log("In the drawMotion function, with yAxisTitle = " + yAxisTitle + xBase2 );
+
+           context.font = '16pt Calibri';
+           context.fillStyle = 'black';
+           context.fillText(yAxisTitle, xBase2-25, yBase2-35);
+
+        // draw graph
+
+        context.strokeStyle = 'blue';
+
+    	var fTest = 300;
+        var XLTest = 2*Math.PI*fTest*L/1000;
+        var XCTest = 1/(2*Math.PI*fTest*C/1000000);
+        var ZTest = Math.sqrt((XLTest-XCTest)*(XLTest-XCTest)+R*R);
+        var currentTest = 170/ZTest;
+        context.beginPath();
+        context.moveTo(xBase2, yBase2+40*graphY-40*currentTest);
+
+          for (i=1; i<=40*graphX; i++)
+          {
+            fTest = 300+2.5*i;
+            XLTest = 2*Math.PI*fTest*L/1000;
+            XCTest = 1/(2*Math.PI*fTest*C/1000000);
+            ZTest = Math.sqrt((XLTest-XCTest)*(XLTest-XCTest)+R*R);
+            currentTest = 170/ZTest;
+            context.lineTo(xBase2+i, yBase2+40*graphY-40*currentTest);
+
+  //         console.log(XL + "   " + XC);
+          }
+           context.stroke();
+
+           context.beginPath();
+           context.arc(xBase2+0.4*(f-300), yBase2+40*graphY-40*current, radius, 0, 2 * Math.PI, false);
+           context.fillStyle = "red";
+           context.fill();
+
+
+         // this section for the voltage graph
+
+           context.strokeStyle = '#999';
+           context.lineWidth = 2;
+
+        // set background color for the graph
+           context.fillStyle = "#eff";
+           context.fillRect(xBase3, yBase3, 40*graph3X, 40*graph3Y);
+
+         // vertical grid lines
+         for (var i = 0; i <= graph3X; i++) {
+           context.beginPath();
+           context.moveTo(xBase3+40*i, yBase3);
+           context.lineTo(xBase3+40*i, yBase3+40*graph3Y/2+10);
+           context.stroke();
+           context.moveTo(xBase3+40*i, yBase3+40*graph3Y/2+30);
+           context.lineTo(xBase3+40*i, yBase3+40*graph3Y);
+           context.stroke();
+           context.font = '14pt Calibri';
+           context.fillStyle = 'black';
+           context.textAlign = 'center';
+           context.textBaseline = 'middle';
+           axisValue = x3Increment*(i);
+           axisLabel = axisValue.toFixed(x3NumDecimals);
+           if (i > 0) context.fillText(axisLabel, xBase3+40*i, yBase3+40*graph3Y/2+20);
+          }
+
+         // horizontal grid lines
+         for (i = 0; i <= graph3Y; i++) {
+           context.beginPath();
+           context.moveTo(xBase3-10, yBase3+40*i);
+           context.lineTo(xBase3+40*graph3X, yBase3+40*i);
+           context.stroke();
+           context.font = '14pt Calibri';
+           context.fillStyle = 'black';
+           context.textAlign = 'center';
+           context.textBaseline = 'middle';
+           axisValue = y3Increment*(2-i);
+           axisLabel = axisValue.toFixed(y3NumDecimals);
+           context.fillText(axisLabel, xBase3-30, yBase3+40*i);
+
+          }
+
+         // x-axis
+           context.strokeStyle = '#000';
+           context.lineWidth = 4;
+           context.beginPath();
+           context.moveTo(xBase3-1, yBase3+40*graph3Y/2);
+           context.lineTo(xBase3+40*graph3X+20, yBase3+40*graph3Y/2);
+           context.stroke();
+           context.moveTo(xBase3+40*graph3X+10, yBase3+40*graph3Y/2-6);
+           context.lineTo(xBase3+40*graph3X+20, yBase3+40*graph3Y/2);
+           context.lineTo(xBase3+40*graph3X+10, yBase3+40*graph3Y/2+6);
+           context.lineJoin = 'miter';
+           context.stroke();
+           context.font = '16pt Calibri';
+           context.fillStyle = 'black';
+           context.textAlign = 'left';
+           context.fillText(xAxis3Title, xBase3+40*graph3X+24, yBase3+40*graph3Y/2);
+
+
+         // y-axis
+           context.strokeStyle = '#000';
+           context.beginPath();
+           context.moveTo(xBase3, yBase3-20);
+           context.lineTo(xBase3, yBase3+40*graph3Y);
+           context.stroke();
+           context.moveTo(xBase3-6, yBase3-10);
+           context.lineTo(xBase3, yBase3-20);
+           context.lineTo(xBase3+6, yBase3-10);
+           context.lineJoin = 'miter';
+           context.stroke();
+           context.strokeStyle = '#000';
+           context.textAlign = 'center';
+  //         console.log("In the drawMotion function, with yAxisTitle = " + yAxisTitle + xBase2 );
+
+           context.font = '16pt Calibri';
+           context.fillStyle = 'black';
+           context.fillText(yAxis3Title, xBase3-25, yBase3-35);
+
+          // the voltage graph
+          context.strokeStyle = "purple";
+
+          context.beginPath();
+          context.moveTo(xBase3, yBase3+40*graphY/2);
+
+          for (i=1; i<=40*graph3X; i++)
+          {
+            context.lineTo(xBase3+i, yBase3+40*graphY/2-34*Math.sin(2*Math.PI*f*i/(80*1000)));
+
+  //         console.log(XL + "   " + XC);
+          }
+           context.stroke();
+
+          var phi = Math.atan2(XL-XC,R);
+
+          context.strokeStyle = "red";
+
+          context.beginPath();
+          context.moveTo(xBase3, yBase3+40*graphY/2-20*(current*R/100)*Math.sin(-phi));
+
+          for (i=1; i<=40*graph3X; i++)
+          {
+            context.lineTo(xBase3+i, yBase3+40*graphY/2-20*(current*R/100)*Math.sin(-phi+2*Math.PI*f*i/(80*1000)));
+
+  //         console.log(XL + "   " + XC);
+          }
+           context.stroke();
+
+          context.strokeStyle = "blue";
+
+          context.beginPath();
+          context.moveTo(xBase3, yBase3+40*graphY/2-20*(current*XL/100)*Math.cos(-phi));
+
+          for (i=1; i<=40*graph3X; i++)
+          {
+            context.lineTo(xBase3+i, yBase3+40*graphY/2-20*(current*XL/100)*Math.cos(-phi+2*Math.PI*f*i/(80*1000)));
+
+  //         console.log(XL + "   " + XC);
+          }
+           context.stroke();
+
+          context.strokeStyle = "green";
+
+          context.beginPath();
+          context.moveTo(xBase3, yBase3+40*graphY/2+20*(current*XC/100)*Math.cos(-phi));
+
+          for (i=1; i<=40*graph3X; i++)
+          {
+            context.lineTo(xBase3+i, yBase3+40*graphY/2+20*(current*XC/100)*Math.cos(-phi+2*Math.PI*f*i/(80*1000)));
+
+  //         console.log(XL + "   " + XC);
+          }
+           context.stroke();
+
+
+           context.font = '16pt Calibri';
+
+           context.fillStyle = "blue";
+           var XLLabel = 'XL = ' + XL.toFixed(2) + ' ohms';
+           XLLabel = "XL";
+           context.textAlign = 'center';
+           context.fillText(XLLabel, xBase, yBase-0.5*XL-10);
+
+           context.fillStyle = "green";
+           var XCLabel = 'XC = ' + XC.toFixed(2) + ' ohms';
+           XCLabel = "XC";
+           context.textAlign = 'center';
+           context.fillText(XCLabel, xBase, yBase+0.5*XC+10);
+
+           context.fillStyle = "red";
+           var RLabel = 'R = ' + R.toFixed(2) + ' ohms';
+           RLabel = "R";
+           context.textAlign = 'left';
+           context.fillText(RLabel, xBase+0.5*R+8, yBase+8);
+
+           context.fillStyle = "purple";
+           var ZLabel = 'Z = ' + Z.toFixed(2) + ' ohms';
+           ZLabel = "Z";
+           context.textAlign = 'left';
+           var zYPos
+           if ((XL > XC) && ((XL-XC) < 40)) zYPos = yBase-0.5*40+8;
+           else if ((XL < XC) && ((XC-XL) < 40)) zYPos = yBase+0.5*40+8;
+           else zYPos = yBase-0.5*(XL-XC)+8;
+           context.fillText(ZLabel, xBase+0.5*R+8, zYPos);
+
+           context.fillStyle = "black";
+           var ILabel = 'I = ' + current.toFixed(2) + ' A';
+           context.textAlign = 'left';
+           context.fillText(ILabel, xBase+330, yBase-160);
+
+           context.fillStyle = 'blue';
+           context.textAlign = 'left';
+           context.fillText("What does the", 100, 100);
+           context.fillText("circuit diagram for", 100, 120);
+           context.fillText("a series RLC", 100, 140);
+           context.fillText("circuit look like?", 100, 160);
+
+           // add the circuit diagram
+
+           	context.drawImage(circuitImage, 80, 70, 203, 122);
+
+
+      }
+    }
+
+    function drawArrow(Fx,Fy,Px,Py, arrowColor) {
+           var theta = Math.atan2(Fy,Fx);
+           context.strokeStyle = arrowColor;
+           context.lineWidth = 4;
+           context.beginPath();
+           context.moveTo(Px, Py);
+           context.lineTo(Px+5*Fx, Py-5*Fy);
+           context.stroke();
+
+           context.lineWidth = 2;
+
+           var Fmag = Math.sqrt(Fx*Fx+Fy*Fy);
+           if (Fmag > 5) Fmag = 5;
+
+           context.fillStyle = arrowColor;
+           context.beginPath();
+           context.moveTo(Px+5*Fx-3*Fmag*Math.cos(theta+0.25*(3.1416/2)),Py-5*Fy+3*Fmag*Math.sin(theta+0.25*(3.1416/2)));
+           context.lineTo(Px+5*Fx,Py-5*Fy);
+           context.lineTo(Px+5*Fx-3*Fmag*Math.cos(theta-0.25*(3.1416/2)),Py-5*Fy+3*Fmag*Math.sin(theta-0.25*(3.1416/2)));
+
+           context.stroke();
+           context.fill();
+
+    }
+
+    function runMotion() {
+        drawMotion();
+        if (runFlag == 1) {
+          timer = window.setTimeout(runMotion, 1000/30);
+        }
+      }
+
+  </script>
+  <p>Esta simulación muestra varias representaciones para un circuito RLC en serie. El triángulo de impedancia se muestra en la parte superior derecha.
+   En la parte inferior izquierda está el gráfico de voltaje en función del tiempo, para el voltaje de la fuente (púrpura), el voltaje a través de la resistencia (rojo), el voltaje
+   a través del inductor (azul), y el voltaje a través del condensador (verde). En la parte inferior derecha hay un gráfico del pico de corriente.
+   En función de la frecuencia.
+   <BR> Ajuste los controles deslizantes y vea qué cambios en la respuesta.</p>
+
+ 
+
+  
+
+
+</body>
+</html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+      <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-8175315-21"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-8175315-21');
+</script>
+
+  <meta charset="utf-8">
+  <title>Ohm's law</title>
+</head>
+
+<body style="font-family:sans-serif; font-size:15px; width:620px; margin-left:auto; margin-right:auto;">
+<center>
+<H3>Investigating Ohm's law</H3>
+    <canvas id="myCanvas" width="620" height="320"></canvas>
+    <div id="buttons">
+      <input type="button" id="play" value="Play" onclick="play()">
+      <input type="button" id="pause" value="Pause" onclick="pause()">
+      <input type="button" id="stepback" value="<< Step" onclick="stepBack()">
+      <input type="button" id="stepforward" value="Step >>" onclick="stepForward()">
+      <input type="button" id="reset" value="Reset" onclick="reset()">
+    </div>
+    <div id="Buttons1">Voltage:
+      <input type="button" id="volt1" value="1.5 V" onclick="setVoltage(1.5)">
+      <input type="button" id="volt2" value="3.0 V" onclick="setVoltage(3.0)">
+      <input type="button" id="volt3" value="4.5 V" onclick="setVoltage(4.5)">
+      <input type="button" id="volt4" value="6.0 V" onclick="setVoltage(6.0)">
+    </div>
+    <div id="Buttons2">Resistance:
+      <input type="button" id="R1" value="1 ohm" onclick="setResistance(1.0)">
+      <input type="button" id="R2" value="2 ohms" onclick="setResistance(2.0)">
+      <input type="button" id="R3" value="3 ohms" onclick="setResistance(3.0)">
+      <input type="button" id="R4" value="4 ohms" onclick="setResistance(4.0)">
+      <input type="button" id="R5" value="5 ohms" onclick="setResistance(5.0)">
+    </div>
+
+    <div id="Buttons3">Circuit View:
+      <input type="button" id="closed1" value="Circuit Diagram" onclick="setMode(1,2)">
+      <input type="button" id="closed2" value="Conventional Current" onclick="setMode(2,2)">
+      <input type="button" id="closed3" value="Actual Charge Flow" onclick="setMode(3,2)">
+    </div>
+
+</center>
+
+  <script>
+
+      function showValue(newValue)
+      {
+             //get the element
+             var display = document.getElementById("initialkValue");
+             //show the amount
+             display.innerHTML=newValue;
+             k = Number(newValue);
+             omega = Math.sqrt(k/m);
+             reset();
+     }
+
+      function setMode(circuitSet,switchSet)
+      {
+             circuitMode = Number(circuitSet);
+             switchMode = Number(switchSet);
+             reset();
+     }
+
+      function setVoltage(batteryVoltage)
+      {
+             voltage = Number(batteryVoltage);
+             reset();
+     }
+
+      function setResistance(newResistance)
+      {
+             resistance = Number(newResistance);
+             reset();
+     }
+
+
+      function play() {
+        window.clearTimeout(timer);
+        runFlag = 1;
+        runMotion();
+
+      }
+
+      function pause() {
+        window.clearTimeout(timer);
+        runFlag = 0;
+
+      }
+
+      function stepForward() {
+        window.clearTimeout(timer);
+        runFlag = 1;
+        drawMotion();
+
+      }
+
+      function stepBack() {
+        window.clearTimeout(timer);
+        index = index-2;
+        if (index < -1) index = -1;
+        time = index/100;
+        xPos = xBase;
+        runFlag = 1;
+        drawMotion();
+
+      }
+
+
+      function reset() {
+        window.clearTimeout(timer);
+        index = -1;
+        time = 0.0;
+        xPos = xBase;
+        current = voltage/resistance;
+//        maxTime = 0.23*3.0/current;
+        maxTime = (24-(current/3.0))/(100.0*current/3.0);
+        runFlag = 1;
+        if (switchMode == 2) runMotion();
+        else drawMotion();
+
+      }
+
+
+
+      var canvas = document.getElementById("myCanvas");
+      var context = canvas.getContext("2d");
+      var index = -1;
+      var xBase = 200;
+      var yBase = 40;
+      var xInit = 37;
+      var graphType = 1;
+      var graphTitle = 'Position vs. time';
+      var yAxisTitle = 'x (m)';
+      var slope = 0.4;
+      var yIncrement = 0.5;
+      var yNumDecimals = 1;
+      var yStart = yBase+160;
+      var plotColor = '#ff00ff';
+      var circuitMode = 3;
+      var switchMode = 2;
+      var chargeColor = 'red';
+      var switchCharge = 4;
+      var v;
+      var radius = 6;
+      var time = 0.0;
+      var x = 0.0;
+      var voltage = 6.0;
+      var resistance = 2.0;
+      var current = voltage/resistance;
+      var maxTime = (24-(current/3.0))/(100.0*current/3.0);
+      var timer;
+      var runFlag = 1;
+
+//      drawMotion();
+       setMode(3,2)
+
+    function drawMotion() {
+
+  //    console.log("In the drawMotion function, with runFlag = " + runFlag );
+
+      if ((time >= maxTime))index = 0;
+
+  //    console.log("In the drawMotion function, with runFlag = " + runFlag + " xPos = " + xPos);
+
+      if (runFlag == 1) {    //      run if runFlag equal 1, not if equal 0
+        // clear
+        context.clearRect(0, 0, canvas.width, canvas.height);
+
+        index = index + 1;
+        time = index/100.0;
+
+
+        // set background color for the entire thing
+           context.fillStyle = "#ffd";
+           context.fillRect(0, 0, canvas.width, canvas.height);
+
+        // set background color for the graph
+//           context.fillStyle = "#eff";
+//           context.fillRect(xBase, yBase, 400, 160);
+
+        // set line color
+           context.strokeStyle = '#999';
+           context.lineWidth = 3;
+
+        //  draw the circuit
+
+           context.beginPath();
+           context.moveTo(xBase-40, yBase+72);
+           context.lineTo(xBase+40, yBase+72);
+           context.stroke();
+
+           context.beginPath();
+           context.moveTo(xBase, yBase+72);
+           context.lineTo(xBase, yBase);
+           context.lineTo(xBase+120, yBase);
+           context.lineTo(xBase+240, yBase);
+           context.lineTo(xBase+240, yBase+76);
+           context.stroke();
+
+           context.beginPath();
+           context.moveTo(xBase+240, yBase+240-76);
+           context.lineTo(xBase+240, yBase+240);
+           context.lineTo(xBase, yBase+240);
+           context.lineTo(xBase, yBase+240-72);
+           context.stroke();
+
+           context.beginPath();
+           context.moveTo(xBase-20, yBase+240-72);
+           context.lineTo(xBase+20, yBase+240-72);
+           context.stroke();
+
+           // draw the resistor
+           context.beginPath();
+           context.moveTo(xBase+240, yBase+76);
+           context.lineTo(xBase+240-8, yBase+72+8);
+
+           for (i=1; i<=9; i=i+2) {
+            context.lineTo(xBase+240+8, yBase+72+8+8*i);
+            context.lineTo(xBase+240-8, yBase+72+8+8*(i+1));
+           }
+           context.lineTo(xBase+240, yBase+240-76);
+           context.stroke();
+
+           if (circuitMode > 1) {
+             if (switchMode == 1) v = 0;
+             else v = 100*current/3.0;
+             if (circuitMode == 2) {
+               factor = 1;
+               chargeColor = 'red';
+               switchCharge = 4;
+             }
+             else {
+               factor = -1;
+               chargeColor = 'blue';
+               switchCharge = 3;
+             }
+             for (i=0; i<=9; i++) {
+               context.beginPath();
+               if ((i == switchCharge) && (switchMode == 1)) context.arc(xBase+16-12*factor+24*i+v*factor*time, yBase-11, radius, 0, 2 * Math.PI, false);
+               else context.arc(xBase+12-12*factor+24*i+v*factor*time, yBase, radius, 0, 2 * Math.PI, false);
+               context.fillStyle = chargeColor;
+               context.fill();
+             }
+             for (i=0; i<=9; i++) {
+               context.beginPath();
+               context.arc(xBase+240-12+12*factor-24*i-v*factor*time, yBase+240, radius, 0, 2 * Math.PI, false);
+               context.arc(xBase+240,yBase+12-12*factor+24*i+v*factor*time, radius, 0, 2 * Math.PI, false);
+               context.fillStyle = chargeColor;
+               context.fill();
+             }
+             for (i=0; i<=2; i++) {
+               context.beginPath();
+               context.arc(xBase,yBase+240-12+12*factor-24*i-v*factor*time, radius, 0, 2 * Math.PI, false);
+               context.arc(xBase,yBase+240-12+12*factor-24*(i+7)-v*factor*time, radius, 0, 2 * Math.PI, false);
+               context.fillStyle = chargeColor;
+               context.fill();
+             }
+             for (i=3; i<=6; i++) {
+               context.beginPath();
+               context.arc(xBase,yBase+240-12+12-24*i-v*time, radius, 0, 2 * Math.PI, false);
+               context.fillStyle = 'red';
+               context.fill();
+             }
+           }
+
+           var axisLabel = '';
+           var axisValue = 0;
+
+           context.font = '16pt Calibri';
+           context.fillStyle = 'black';
+
+
+        var voltsLabel = voltage.toFixed(1) + ' V';
+        context.textAlign = 'left';
+        context.fillText(voltsLabel, xBase-60, yBase+125);
+
+        var RLabel = resistance.toFixed(1) + ' ohm';
+        if (resistance > 1.1) RLabel = RLabel + 's';
+        context.textAlign = 'left';
+        context.fillText(RLabel, xBase+150, yBase+125);
+
+        var ILabel = 'Current = ' + current.toFixed(2) + ' A';
+        context.textAlign = 'left';
+        context.fillText(ILabel, xBase+50, yBase+270);
+
+
+        context.fillText("+", xBase-30, yBase+66);
+        context.fillText("-", xBase-20, yBase+184);
+
+      }
+    }
+
+    function runMotion() {
+        drawMotion();
+        if (runFlag == 1) {
+          timer = window.setTimeout(runMotion, 1000/30);
+        }
+      }
+
+  </script>
+
+  <p> En esta simulación, puede visualizar el flujo de carga alrededor de un circuito y ver qué sucede
+   cuando se cambia la tensión de la batería o la resistencia de la resistencia. </p>
+
+
+
+
+</body>
+</html>

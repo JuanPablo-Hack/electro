@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-8175315-21"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-8175315-21');
+</script>
+
+  <meta charset="utf-8">
+  <title>A battery</title>
+</head>
+
+<body style="font-family:sans-serif; font-size:15px; width:620px; margin-left:auto; margin-right:auto;">
+<center>
+<H3>A battery</H3>
+    <canvas id="myCanvas" width="620" height="320"></canvas>
+    <div id="buttons">
+      <input type="button" id="play" value="Play" onclick="play()">
+      <input type="button" id="pause" value="Pause" onclick="pause()">
+      <input type="button" id="stepback" value="<< Step" onclick="stepBack()">
+      <input type="button" id="stepforward" value="Step >>" onclick="stepForward()">
+      <input type="button" id="reset" value="Reset" onclick="reset()">
+    </div>
+    <BR>
+    <div id="Buttons1">Circuit Diagram:
+      <input type="button" id="open1" value="Switch Open" onclick="setMode(1,1)">
+      <input type="button" id="closed1" value="Switch Closed" onclick="setMode(1,2)">
+    </div>
+    <div id="Buttons2">Conventional Current:
+      <input type="button" id="open2" value="Switch Open" onclick="setMode(2,1)">
+      <input type="button" id="closed2" value="Switch Closed" onclick="setMode(2,2)">
+    </div>
+    <div id="Buttons3">Actual Charge Flow:
+      <input type="button" id="open3" value="Switch Open" onclick="setMode(3,1)">
+      <input type="button" id="closed3" value="Switch Closed" onclick="setMode(3,2)">
+    </div>
+
+</center>
+
+  <script>
+
+      function showValue(newValue)
+      {
+             //get the element
+             var display = document.getElementById("initialkValue");
+             //show the amount
+             display.innerHTML=newValue;
+             k = Number(newValue);
+             omega = Math.sqrt(k/m);
+             reset();
+     }
+
+      function setMode(circuitSet,switchSet)
+      {
+             circuitMode = Number(circuitSet);
+             switchMode = Number(switchSet);
+             reset();
+     }
+
+      function play() {
+        window.clearTimeout(timer);
+        runFlag = 1;
+        runMotion();
+
+      }
+
+      function pause() {
+        window.clearTimeout(timer);
+        runFlag = 0;
+
+      }
+
+      function stepForward() {
+        window.clearTimeout(timer);
+        runFlag = 1;
+        drawMotion();
+
+      }
+
+      function stepBack() {
+        window.clearTimeout(timer);
+        index = index-2;
+        if (index < -1) index = -1;
+        time = index/100;
+        xPos = xBase;
+        runFlag = 1;
+        drawMotion();
+
+      }
+
+
+      function reset() {
+        window.clearTimeout(timer);
+        index = -1;
+        time = 0.0;
+        xPos = xBase;
+        runFlag = 1;
+        if (switchMode == 2) runMotion();
+        else drawMotion();
+
+      }
+
+
+      var canvas = document.getElementById("myCanvas");
+      var context = canvas.getContext("2d");
+      var index = -1;
+      var xBase = 200;
+      var yBase = 40;
+      var xInit = 37;
+      var graphType = 1;
+      var graphTitle = 'Position vs. time';
+      var yAxisTitle = 'x (m)';
+      var slope = 0.4;
+      var yIncrement = 0.5;
+      var yNumDecimals = 1;
+      var yStart = yBase+160;
+      var plotColor = '#ff00ff';
+      var circuitMode = 3;
+      var switchMode = 1;
+      var chargeColor = 'red';
+      var switchCharge = 4;
+      var v;
+      var radius = 6;
+      var time = 0.0;
+      var x = 0.0;
+      var timer;
+      var runFlag = 1;
+
+      drawMotion();
+
+    function drawMotion() {
+
+  //    console.log("In the drawMotion function, with runFlag = " + runFlag );
+
+      if ((time >= 0.23))index = 0;
+
+  //    console.log("In the drawMotion function, with runFlag = " + runFlag + " xPos = " + xPos);
+
+      if (runFlag == 1) {    //      run if runFlag equal 1, not if equal 0
+        // clear
+        context.clearRect(0, 0, canvas.width, canvas.height);
+
+        index = index + 1;
+        time = index/100.0;
+
+
+        // set background color for the entire thing
+           context.fillStyle = "#ffd";
+           context.fillRect(0, 0, canvas.width, canvas.height);
+
+        // set background color for the graph
+//           context.fillStyle = "#eff";
+//           context.fillRect(xBase, yBase, 400, 160);
+
+        // set line color
+           context.strokeStyle = '#999';
+           context.lineWidth = 3;
+
+        //  draw the circuit
+
+           context.beginPath();
+           context.moveTo(xBase-80, yBase+72);
+           context.lineTo(xBase+80, yBase+72);
+           context.stroke();
+
+           context.beginPath();
+           context.moveTo(xBase, yBase+72);
+           context.lineTo(xBase, yBase);
+           context.lineTo(xBase+84, yBase);
+           context.stroke();
+
+           context.strokeStyle = 'black';
+           context.lineWidth = 3;
+
+           context.beginPath();
+           if (switchMode == 1) context.moveTo(xBase+90, yBase-17);
+           else context.moveTo(xBase+84, yBase);
+           context.lineTo(xBase+120, yBase);
+           context.stroke();
+
+           context.strokeStyle = '#999';
+           context.lineWidth = 3;
+
+           context.beginPath();
+           context.moveTo(xBase+120, yBase);
+           context.lineTo(xBase+240, yBase);
+           context.lineTo(xBase+240, yBase+76);
+           context.stroke();
+
+           context.beginPath();
+           context.moveTo(xBase+240, yBase+240-76);
+           context.lineTo(xBase+240, yBase+240);
+           context.lineTo(xBase, yBase+240);
+           context.lineTo(xBase, yBase+240-72);
+           context.stroke();
+
+           context.beginPath();
+           context.moveTo(xBase-40, yBase+240-72);
+           context.lineTo(xBase+40, yBase+240-72);
+           context.stroke();
+
+           // draw the resistor
+           context.beginPath();
+           context.moveTo(xBase+240, yBase+76);
+           context.lineTo(xBase+240-8, yBase+72+8);
+
+           for (i=1; i<=9; i=i+2) {
+            context.lineTo(xBase+240+8, yBase+72+8+8*i);
+            context.lineTo(xBase+240-8, yBase+72+8+8*(i+1));
+           }
+           context.lineTo(xBase+240, yBase+240-76);
+           context.stroke();
+
+           if (circuitMode > 1) {
+             if (switchMode == 1) v = 0;
+             else v = 100;
+             if (circuitMode == 2) {
+               factor = 1;
+               chargeColor = 'red';
+               switchCharge = 4;
+             }
+             else {
+               factor = -1;
+               chargeColor = 'blue';
+               switchCharge = 3;
+             }
+             for (i=0; i<=9; i++) {
+               context.beginPath();
+               if ((i == switchCharge) && (switchMode == 1)) context.arc(xBase+16-12*factor+24*i+v*factor*time, yBase-11, radius, 0, 2 * Math.PI, false);
+               else context.arc(xBase+12-12*factor+24*i+v*factor*time, yBase, radius, 0, 2 * Math.PI, false);
+               context.fillStyle = chargeColor;
+               context.fill();
+             }
+             for (i=0; i<=9; i++) {
+               context.beginPath();
+               context.arc(xBase+240-12+12*factor-24*i-v*factor*time, yBase+240, radius, 0, 2 * Math.PI, false);
+               context.fillStyle = chargeColor;
+               context.fill();
+               context.beginPath();
+               context.arc(xBase+240,yBase+12-12*factor+24*i+v*factor*time, radius, 0, 2 * Math.PI, false);
+               context.fillStyle = chargeColor;
+               context.fill();
+             }
+             for (i=0; i<=2; i++) {
+               context.beginPath();
+               context.arc(xBase,yBase+240-12+12*factor-24*i-v*factor*time, radius, 0, 2 * Math.PI, false);
+               context.arc(xBase,yBase+240-12+12*factor-24*(i+7)-v*factor*time, radius, 0, 2 * Math.PI, false);
+               context.fillStyle = chargeColor;
+               context.fill();
+             }
+             for (i=3; i<=6; i++) {
+               context.beginPath();
+               context.arc(xBase,yBase+240-12+12-24*i-v*time, radius, 0, 2 * Math.PI, false);
+               context.fillStyle = 'red';
+               context.fill();
+             }
+           }
+
+           context.font = '16pt Calibri';
+           context.fillStyle = 'black';
+
+
+//        var timeLabel = 't = ';
+//        timeLabel = timeLabel + time.toFixed(2) + ' s';
+//        context.textAlign = 'left';
+//        context.fillText(timeLabel, xBase+260, yBase+270);
+
+        context.fillText("+", xBase-70, yBase+66);
+        context.fillText("-", xBase-40, yBase+184);
+        context.fillText("resistor", xBase+260, yBase+125);
+        context.fillText("battery", xBase-80, yBase+125);
+        context.fillText("switch", xBase+70, yBase+30);
+
+      }
+    }
+
+    function runMotion() {
+        drawMotion();
+        if (runFlag == 1) {
+          timer = window.setTimeout(runMotion, 1000/30);
+        }
+      }
+
+  </script>
+<p>The simulation shows a simple circuit, with a battery, a switch, a resistor, and a few wires.
+Conventional current shows the Ben Franklin view of the circuit, that the flowing charges are positive (shown in red).
+In actuality, the flowing charges in the circuit outside the battery are negative (shown in blue) - they are electrons -
+while the ones inside the battery are positive. For the "Actual" situation, note what happens at the
+two terminals of the battery. This looks a bit like magic, but is actually chemistry.</p>
+<p>First posted 12-23-2015. Written by Andrew Duffy
+<BR>Updated 2-06-2017 so positive charges do not move in the battery when the switch is open.</p>
+    <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png" /></a><br />This <span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/InteractiveResource" rel="dct:type">work</span> by <span xmlns:cc="http://creativecommons.org/ns#" property="cc:attributionName">Andrew Duffy</span> is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.<br />This simulation can be found in the collection at <a xmlns:dct="http://purl.org/dc/terms/" href="http://physics.bu.edu/~duffy/classroom.html" rel="dct:source">http://physics.bu.edu/~duffy/classroom.html</a>.
+
+            <p>The counter has been running on this page since 8-13-2018. The number of people accessing the page since then is:
+<br><img src="http://physics.bu.edu/cgi-bin/Count.cgi?df=battery.dat" align="absmiddle">
+
+
+</body>
+</html>
